@@ -61,7 +61,9 @@ func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
 		Details:    musicActivity.Track,
 		LargeImage: musicActivity.Cover,
 		LargeText:  musicActivity.Album,
+		// TODO: make small image optional / toggleable
 		SmallImage: LISTENBRAINZ_LOGO,
+		// TODO: can I set it to automatically expire when the song length is reached rather than waiting for LB to reset
 		Timestamps: timestamps,
 		Buttons:    d.getButtons(musicActivity),
 	}
