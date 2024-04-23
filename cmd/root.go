@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ikanexus/listenbrainz-rpc/internal/discord"
-	"github.com/ikanexus/listenbrainz-rpc/internal/scrobble"
+	"github.com/charmbracelet/log"
+	"github.com/ikanexus/listenbrainz-rpc/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -24,11 +24,12 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) error {
-		discord.Login(discordAppId)
-		defer discord.Logout()
-		listenbrainzUser, err := cmd.Flags().GetString("user")
-		cobra.CheckErr(err)
-		return scrobble.Scrobble(listenbrainzUser)
+		listenbrainzUser := viper.GetString("user")
+		if verbose, err := cmd.Flags().GetBool("verbose"); err == nil && verbose == true {
+			log.SetLevel(log.DebugLevel)
+		}
+		scrobbler := internal.NewScrobbler(listenbrainzUser, discordAppId)
+		return scrobbler.Scrobble()
 	},
 }
 
@@ -48,16 +49,22 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $XDG_CONFIG_HOME/listenbrainz-rpc.yaml)")
+	configDefault := fmt.Sprintf("%s/listenbrainz-rpc.yaml", getXdgHome())
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", configDefault, "config file")
 
 	rootCmd.Flags().StringVar(&discordAppId, "app-id", "1231614541905920113", "Discord App ID")
 	rootCmd.Flags().String("user", "", "Listenbrainz Username")
+	rootCmd.Flags().BoolP("verbose", "v", false, "Show verbose logging")
 }
 
-func getXdgHome(homeDir string) string {
+func getXdgHome() string {
+	// Find home directory.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+
 	xdgHome := os.Getenv("XDG_CONFIG_HOME")
 	if xdgHome == "" {
-		xdgHome = filepath.Join(homeDir, ".config")
+		xdgHome = filepath.Join(home, ".config")
 	}
 	return xdgHome
 }
@@ -68,18 +75,14 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		xdgHome := getXdgHome()
 
-		xdgHome := getXdgHome(home)
-
-		// Search config in home directory with name ".listenbrainz-rpc" (without extension).
 		viper.AddConfigPath(xdgHome)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("listenbrainz-rpc")
 	}
 
+	viper.SetEnvPrefix("listenbrainz")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
