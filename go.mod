@@ -3,6 +3,7 @@ module github.com/ikanexus/listenbrainz-rpc
 go 1.22.2
 
 require (
+	github.com/charmbracelet/log v0.4.0
 	github.com/hugolgst/rich-go v0.0.0-20230917173849-4a4fb1d3c362
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
@@ -11,7 +12,6 @@ require (
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/lipgloss v0.10.0 // indirect
-	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -31,7 +31,6 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
