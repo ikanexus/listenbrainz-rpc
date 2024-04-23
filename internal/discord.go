@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/hugolgst/rich-go/client"
+	"github.com/spf13/viper"
 )
 
 type ScrobbleActivity struct {
@@ -16,7 +18,7 @@ type ScrobbleActivity struct {
 }
 
 type DiscordActivity interface {
-	Login() error
+	Login()
 	Logout()
 	AddActivity(musicActivity *ScrobbleActivity) error
 }
@@ -25,22 +27,30 @@ type discordActivity struct {
 	appId string
 }
 
-func NewDiscordActivity(appId string) DiscordActivity {
+func NewDiscordActivity() DiscordActivity {
+	appId := viper.GetString("app-id")
 	return &discordActivity{
 		appId: appId,
 	}
 }
 
-func (d discordActivity) Login() error {
-	return client.Login(d.appId)
+func (d discordActivity) Login() {
+	log.Debugf("Logging in with AppID: %s", d.appId)
+	err := client.Login(d.appId)
+	if err != nil {
+		log.Fatalf("Unable to login to Discord IPC => %v", err)
+	}
 }
 
 func (d discordActivity) Logout() {
 	client.Logout()
 }
 
-func (d discordActivity) getButtons() {
-
+func (d discordActivity) getButtons(musicActivity *ScrobbleActivity) []*client.Button {
+	// TODO: what do I do if there is no release ID
+	return []*client.Button{
+		{Label: "Open on MusicBrainz", Url: fmt.Sprintf("https://musicbrainz.org/release/%s", musicActivity.ReleaseId)},
+	}
 }
 
 func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
@@ -53,9 +63,7 @@ func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
 		LargeText:  musicActivity.Album,
 		SmallImage: LISTENBRAINZ_LOGO,
 		Timestamps: timestamps,
-		Buttons: []*client.Button{
-			{Label: "Open on MusicBrainz", Url: fmt.Sprintf("https://musicbrainz.org/release/%s", musicActivity.ReleaseId)},
-		},
+		Buttons:    d.getButtons(musicActivity),
 	}
 	return client.SetActivity(activity)
 }

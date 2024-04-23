@@ -1,8 +1,10 @@
 package internal
 
 import (
-	"github.com/charmbracelet/log"
 	"time"
+
+	"github.com/charmbracelet/log"
+	"github.com/spf13/viper"
 )
 
 const SLEEP_DELAY = 10 * time.Second
@@ -83,10 +85,11 @@ func (s *scrobbler) checkCurrentPlaying() *Listen {
 	return s.listenBrainz.GetNowPlaying()
 }
 
-func NewScrobbler(username, clientId string) Scrobbler {
+func NewScrobbler() Scrobbler {
+	username := viper.GetString("user")
 	return &scrobbler{
 		username:        username,
-		discordActivity: NewDiscordActivity(clientId),
+		discordActivity: NewDiscordActivity(),
 		coverRetriever:  NewCoverArtRetriever(),
 		listenBrainz:    NewListenBrainz(username),
 	}

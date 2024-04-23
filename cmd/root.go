@@ -15,7 +15,6 @@ import (
 )
 
 var cfgFile string
-var discordAppId string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -24,11 +23,10 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) error {
-		listenbrainzUser := viper.GetString("user")
 		if verbose, err := cmd.Flags().GetBool("verbose"); err == nil && verbose == true {
 			log.SetLevel(log.DebugLevel)
 		}
-		scrobbler := internal.NewScrobbler(listenbrainzUser, discordAppId)
+		scrobbler := internal.NewScrobbler()
 		return scrobbler.Scrobble()
 	},
 }
@@ -52,8 +50,12 @@ func init() {
 	configDefault := fmt.Sprintf("%s/listenbrainz-rpc.yaml", getXdgHome())
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", configDefault, "config file")
 
-	rootCmd.Flags().StringVar(&discordAppId, "app-id", "1231614541905920113", "Discord App ID")
-	rootCmd.Flags().String("user", "", "Listenbrainz Username")
+	rootCmd.Flags().StringP("app-id", "a", "1232457767726485545", "Discord App ID")
+	viper.BindPFlag("app-id", rootCmd.Flags().Lookup("app-id"))
+
+	rootCmd.Flags().StringP("user", "u", "", "Listenbrainz Username")
+	viper.BindPFlag("user", rootCmd.Flags().Lookup("user"))
+
 	rootCmd.Flags().BoolP("verbose", "v", false, "Show verbose logging")
 }
 
