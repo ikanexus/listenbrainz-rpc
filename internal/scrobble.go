@@ -3,7 +3,6 @@ package internal
 import (
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/spf13/viper"
 )
 
@@ -18,10 +17,11 @@ type scrobbler struct {
 
 type Scrobbler interface {
 	Scrobble() error
+	CheckCurrentPlaying() *Listen
 }
 
 func (s scrobbler) Scrobble() error {
-	log.Infof("Running with user: %s", s.username)
+	logger.Infof("Running with user: %s", s.username)
 	defer s.discordActivity.Logout()
 	s.discordActivity.Login()
 
@@ -32,12 +32,12 @@ func (s scrobbler) Scrobble() error {
 	var runtime int64
 
 	for running := true; running; {
-		currentSong := s.checkCurrentPlaying()
+		currentSong := s.CheckCurrentPlaying()
 
 		if currentSong == nil {
 			time.Sleep(SLEEP_DELAY * 2)
 			if !isIdle {
-				log.Infof("No song playing - clearing activity")
+				logger.Infof("No song playing - clearing activity")
 				isIdle = true
 				s.discordActivity.Logout()
 			}
@@ -59,17 +59,17 @@ func (s scrobbler) Scrobble() error {
 		albumName := trackMetadata.ReleaseName
 
 		if trackHash == currentSongId {
-			log.Debugf("Still playing %s :: %s :: %s", trackName, artistName, albumName)
+			logger.Debugf("Still playing %s :: %s :: %s", trackName, artistName, albumName)
 			startDuration := (time.Duration(runtime) * time.Millisecond) + SLEEP_DELAY
 			duration := currentSongStart.Add(startDuration).Sub(currentSongStart)
-			log.Debugf("Estimated runtime: %v/%v", duration, trackDuration)
+			logger.Debugf("Estimated runtime: %v/%v", duration, trackDuration)
 			runtime = startDuration.Milliseconds()
 			time.Sleep(SLEEP_DELAY)
 			continue
 		}
 		currentSongStart = time.Now()
 		runtime = 0
-		log.Infof("Playing %s :: %s :: %s", trackName, artistName, albumName)
+		logger.Infof("Playing %s :: %s :: %s", trackName, artistName, albumName)
 		currentSongId = trackHash
 
 		releaseId := releaseInfo.GetReleaseId()
@@ -93,7 +93,7 @@ func (s scrobbler) Scrobble() error {
 	return nil
 }
 
-func (s *scrobbler) checkCurrentPlaying() *Listen {
+func (s *scrobbler) CheckCurrentPlaying() *Listen {
 	return s.listenBrainz.GetNowPlaying()
 }
 

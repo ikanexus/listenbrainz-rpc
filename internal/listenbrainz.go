@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/charmbracelet/log"
 )
 
 const API_VERSION = 1
@@ -63,7 +61,7 @@ type ListenBrainz interface {
 func (l listenBrainz) GetNowPlaying() *Listen {
 	res, err := http.Get(fmt.Sprintf("%s/%d/user/%s/playing-now", API_BASE, API_VERSION, l.username))
 	if err != nil {
-		log.Errorf("Unable to get current playing => %v", err)
+		logger.Errorf("Unable to get current playing => %v", err)
 		return nil
 	}
 
@@ -74,7 +72,7 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 
 	err = json.NewDecoder(body).Decode(&listenResponse)
 	if err != nil {
-		log.Errorf("Unable to decode json body => %v", err)
+		logger.Errorf("Unable to decode json body => %v", err)
 		return nil
 	}
 
@@ -87,7 +85,7 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
 	var currentListen *Listen
 	if payload.PlayingNow == false || payload.Count == 0 {
-		log.Debugf("No song playing")
+		logger.Debugf("No song playing")
 		return nil
 	}
 	for _, listen := range payload.Listens {

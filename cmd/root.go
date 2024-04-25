@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/charmbracelet/log"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ikanexus/listenbrainz-rpc/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,11 +23,13 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if verbose, err := cmd.Flags().GetBool("verbose"); err == nil && verbose == true {
-			log.SetLevel(log.DebugLevel)
+		m := internal.NewModel()
+		if _, err := tea.NewProgram(m).Run(); err != nil {
+			return err
 		}
-		scrobbler := internal.NewScrobbler()
-		return scrobbler.Scrobble()
+		return nil
+		// scrobbler := internal.NewScrobbler()
+		// return scrobbler.Scrobble()
 	},
 }
 
@@ -57,6 +59,7 @@ func init() {
 	viper.BindPFlag("user", rootCmd.Flags().Lookup("user"))
 
 	rootCmd.Flags().BoolP("verbose", "v", false, "Show verbose logging")
+	viper.BindPFlag("verbose", rootCmd.Flags().Lookup("verbose"))
 }
 
 func getXdgHome() string {

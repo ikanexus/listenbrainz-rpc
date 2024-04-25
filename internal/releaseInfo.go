@@ -8,7 +8,9 @@ import (
 type ReleaseInfoRetriever interface {
 	GetDuration() time.Duration
 	GetReleaseId() string
+	GetTrackId() string
 	GetTrackHash() string
+	TrackMatches(other TrackMetadata) bool
 }
 
 type releaseInfoRetriever struct {
@@ -50,7 +52,32 @@ func (r releaseInfoRetriever) GetReleaseId() string {
 	return result
 }
 
+func (r releaseInfoRetriever) GetTrackId() string {
+	metadata := r.track
+	locations := []MbidMapping{
+		metadata.AdditionalInfo.MbidMapping,
+		metadata.MbidMapping,
+	}
+	var result string
+
+	for _, location := range locations {
+		trackId := location.TrackMBID
+		if trackId != "" {
+			result = trackId
+			break
+		}
+	}
+	return result
+}
+
 func (r releaseInfoRetriever) GetTrackHash() string {
 	b, _ := json.Marshal(r.track)
 	return string(b)
+}
+
+func (r releaseInfoRetriever) TrackMatches(b TrackMetadata) bool {
+	self := r.GetTrackId()
+	other := NewReleaseInfoRetriever(b).GetTrackId()
+
+	return self == other
 }

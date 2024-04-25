@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/hugolgst/rich-go/client"
 	"github.com/spf13/viper"
 )
@@ -38,10 +37,10 @@ func NewDiscordActivity() DiscordActivity {
 }
 
 func (d discordActivity) Login() {
-	log.Debugf("Logging in with AppID: %s", d.appId)
+	logger.Debugf("Logging in with AppID: %s", d.appId)
 	err := client.Login(d.appId)
 	if err != nil {
-		log.Fatalf("Unable to login to Discord IPC => %v", err)
+		logger.Fatalf("Unable to login to Discord IPC => %v", err)
 	}
 }
 
