@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/charmbracelet/log"
+	"github.com/spf13/viper"
 )
 
 const API_VERSION = 1
@@ -61,7 +64,7 @@ type ListenBrainz interface {
 func (l listenBrainz) GetNowPlaying() *Listen {
 	res, err := http.Get(fmt.Sprintf("%s/%d/user/%s/playing-now", API_BASE, API_VERSION, l.username))
 	if err != nil {
-		logger.Errorf("Unable to get current playing => %v", err)
+		log.Errorf("Unable to get current playing => %v", err)
 		return nil
 	}
 
@@ -72,7 +75,7 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 
 	err = json.NewDecoder(body).Decode(&listenResponse)
 	if err != nil {
-		logger.Errorf("Unable to decode json body => %v", err)
+		log.Errorf("Unable to decode json body => %v", err)
 		return nil
 	}
 
@@ -83,9 +86,10 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 }
 
 func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
+	log.Debugf("incoming listen: %v", payload)
 	var currentListen *Listen
 	if payload.PlayingNow == false || payload.Count == 0 {
-		logger.Debugf("No song playing")
+		log.Debugf("No song playing")
 		return nil
 	}
 	for _, listen := range payload.Listens {
@@ -94,10 +98,12 @@ func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
 			break
 		}
 	}
+	log.Debugf("current listen: %v", currentListen)
 	return currentListen
 }
 
-func NewListenBrainz(username string) ListenBrainz {
+func NewListenBrainz() ListenBrainz {
+	username := viper.GetString("user")
 	return &listenBrainz{
 		username: username,
 	}

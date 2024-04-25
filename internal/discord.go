@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/hugolgst/rich-go/client"
 	"github.com/spf13/viper"
 )
@@ -23,6 +24,7 @@ type DiscordActivity interface {
 }
 
 type discordActivity struct {
+	active           bool
 	appId            string
 	listenbrainzUser string
 }
@@ -36,16 +38,26 @@ func NewDiscordActivity() DiscordActivity {
 	}
 }
 
-func (d discordActivity) Login() {
-	logger.Debugf("Logging in with AppID: %s", d.appId)
+func (d *discordActivity) Login() {
+	log.Debugf("Logging in with AppID: %s", d.appId)
+	if d.active {
+		log.Debug("Already logged in, skipping")
+		return
+	}
 	err := client.Login(d.appId)
 	if err != nil {
-		logger.Fatalf("Unable to login to Discord IPC => %v", err)
+		log.Fatalf("Unable to login to Discord IPC => %v", err)
 	}
+	d.active = true
 }
 
-func (d discordActivity) Logout() {
-	client.Logout()
+func (d *discordActivity) Logout() {
+	log.Debugf("Logging out from IPC")
+	if d.active {
+		client.Logout()
+	} else {
+		log.Debug("Already logged out, skipping")
+	}
 }
 
 func (d discordActivity) getButtons(musicActivity *ScrobbleActivity) []*client.Button {

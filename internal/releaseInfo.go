@@ -76,8 +76,8 @@ func (r releaseInfoRetriever) GetTrackHash() string {
 }
 
 func (r releaseInfoRetriever) TrackMatches(b TrackMetadata) bool {
-	self := r.GetTrackId()
-	other := NewReleaseInfoRetriever(b).GetTrackId()
+	self := r.GetTrackHash()
+	other := NewReleaseInfoRetriever(b).GetTrackHash()
 
 	return self == other
 }

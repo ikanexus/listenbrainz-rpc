@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/ikanexus/listenbrainz-rpc/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -76,6 +77,19 @@ func getXdgHome() string {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	// Configure logger to output to file as we can't output to StdOut
+	level := log.InfoLevel
+	if viper.GetBool("verbose") {
+		level = log.DebugLevel
+	}
+	log.SetLevel(level)
+	// log.SetFormatter(log.JSONFormatter)
+	logFile := viper.GetString("logFile")
+	if logFile == "" {
+		logFile = "listenbrainz.log"
+	}
+	tea.LogToFileWith(logFile, "", log.Default())
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
