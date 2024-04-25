@@ -2,10 +2,11 @@ package internal
 
 import (
 	"encoding/json"
+	"time"
 )
 
 type ReleaseInfoRetriever interface {
-	GetDuration() int
+	GetDuration() time.Duration
 	GetReleaseId() string
 	GetTrackHash() string
 }
@@ -20,13 +21,13 @@ func NewReleaseInfoRetriever(track TrackMetadata) ReleaseInfoRetriever {
 	}
 }
 
-func (r releaseInfoRetriever) GetDuration() int {
+func (r releaseInfoRetriever) GetDuration() time.Duration {
 	trackInfo := r.track.AdditionalInfo
 	if trackInfo.Duration != 0 {
-		return trackInfo.Duration
+		return time.Duration(trackInfo.Duration) * time.Second
 	}
 	if trackInfo.DurationMs != 0 {
-		return trackInfo.DurationMs / 1000
+		return time.Duration(trackInfo.DurationMs) * time.Millisecond
 	}
 	return 0
 }

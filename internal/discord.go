@@ -24,13 +24,16 @@ type DiscordActivity interface {
 }
 
 type discordActivity struct {
-	appId string
+	appId            string
+	listenbrainzUser string
 }
 
 func NewDiscordActivity() DiscordActivity {
 	appId := viper.GetString("app-id")
+	user := viper.GetString("user")
 	return &discordActivity{
-		appId: appId,
+		appId:            appId,
+		listenbrainzUser: user,
 	}
 }
 
@@ -49,7 +52,9 @@ func (d discordActivity) Logout() {
 func (d discordActivity) getButtons(musicActivity *ScrobbleActivity) []*client.Button {
 	// TODO: what do I do if there is no release ID
 	return []*client.Button{
+		{Label: "ListenBrainz Profile", Url: fmt.Sprintf("https://listenbrainz.org/user/%s", d.listenbrainzUser)},
 		{Label: "Open on MusicBrainz", Url: fmt.Sprintf("https://musicbrainz.org/release/%s", musicActivity.ReleaseId)},
+		// {Label: "Open on Spotify", Url: fmt.Sprintf("https://open.spotify.com/%s", "TODO")},
 	}
 }
 
@@ -63,6 +68,7 @@ func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
 		LargeText:  musicActivity.Album,
 		// TODO: make small image optional / toggleable
 		SmallImage: LISTENBRAINZ_LOGO,
+		SmallText:  "Scrobbling via ListenBrainz",
 		// TODO: can I set it to automatically expire when the song length is reached rather than waiting for LB to reset
 		Timestamps: timestamps,
 		Buttons:    d.getButtons(musicActivity),

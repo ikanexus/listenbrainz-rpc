@@ -87,7 +87,7 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
 	var currentListen *Listen
 	if payload.PlayingNow == false || payload.Count == 0 {
-		log.Infof("No song playing")
+		log.Debugf("No song playing")
 		return nil
 	}
 	for _, listen := range payload.Listens {

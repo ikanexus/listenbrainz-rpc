@@ -28,14 +28,19 @@ func (s scrobbler) Scrobble() error {
 	isIdle := false
 
 	var currentSongId string
+	currentSongStart := time.Now()
+	var runtime int64
 
 	for running := true; running; {
 		currentSong := s.checkCurrentPlaying()
 
 		if currentSong == nil {
 			time.Sleep(SLEEP_DELAY * 2)
-			isIdle = true
-			s.discordActivity.Logout()
+			if !isIdle {
+				log.Infof("No song playing - clearing activity")
+				isIdle = true
+				s.discordActivity.Logout()
+			}
 			continue
 		}
 
@@ -46,6 +51,7 @@ func (s scrobbler) Scrobble() error {
 
 		releaseInfo := NewReleaseInfoRetriever(currentSong.TrackMetadata)
 
+		trackDuration := releaseInfo.GetDuration()
 		trackHash := releaseInfo.GetTrackHash()
 		trackMetadata := currentSong.TrackMetadata
 		trackName := trackMetadata.TrackName
@@ -53,11 +59,17 @@ func (s scrobbler) Scrobble() error {
 		albumName := trackMetadata.ReleaseName
 
 		if trackHash == currentSongId {
-			log.Debugf("Still playing %s by %s (%s)", trackName, artistName, albumName)
+			log.Debugf("Still playing %s :: %s :: %s", trackName, artistName, albumName)
+			startDuration := (time.Duration(runtime) * time.Millisecond) + SLEEP_DELAY
+			duration := currentSongStart.Add(startDuration).Sub(currentSongStart)
+			log.Debugf("Estimated runtime: %v/%v", duration, trackDuration)
+			runtime = startDuration.Milliseconds()
 			time.Sleep(SLEEP_DELAY)
 			continue
 		}
-		log.Infof("Playing %s by %s (%s)", trackName, artistName, albumName)
+		currentSongStart = time.Now()
+		runtime = 0
+		log.Infof("Playing %s :: %s :: %s", trackName, artistName, albumName)
 		currentSongId = trackHash
 
 		releaseId := releaseInfo.GetReleaseId()
