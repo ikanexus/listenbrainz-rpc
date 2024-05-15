@@ -54,6 +54,7 @@ func (d *discordActivity) Login() {
 func (d *discordActivity) Logout() {
 	log.Debugf("Logging out from IPC")
 	if d.active {
+		d.active = false
 		client.Logout()
 	} else {
 		log.Debug("Already logged out, skipping")
