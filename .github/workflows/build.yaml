@@ -20,7 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: jdx/mise-action@5bb8f8c1911837cf42064e6490e7634fc842ee7e # v2
-      - run: task test || true # no tests right now - remove when first added
+      - run: go test ./... || true # no tests right now - remove when first added
   build:
     runs-on: ubuntu-24.04
     needs: test
@@ -35,4 +35,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: jdx/mise-action@5bb8f8c1911837cf42064e6490e7634fc842ee7e # v2
-      - run: task build
+      - run: go build -o listenbrainz-rpc main.go
