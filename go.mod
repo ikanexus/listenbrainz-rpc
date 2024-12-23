@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/log v0.4.0
 	github.com/hugolgst/rich-go v0.0.0-20240715122152-74618cc1ace2
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 )
 
