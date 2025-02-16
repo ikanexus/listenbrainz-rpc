@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.3
 	github.com/charmbracelet/log v0.4.0
 	github.com/hugolgst/rich-go v0.0.0-20240715122152-74618cc1ace2
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.0
 	github.com/spf13/viper v1.19.0
 )
 
@@ -38,7 +38,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
