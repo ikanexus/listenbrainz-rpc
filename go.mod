@@ -3,7 +3,7 @@ module github.com/ikanexus/listenbrainz-rpc
 go 1.22.2
 
 require (
-	github.com/charmbracelet/bubbles v0.20.0
+	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/log v0.4.2
 	github.com/hugolgst/rich-go v0.0.0-20240715122152-74618cc1ace2
