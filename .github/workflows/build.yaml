@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
         with:
           path: |
             ~/.cache/go-build
@@ -19,14 +19,14 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - uses: jdx/mise-action@5083fe46898c414b2475087cc79da59e7da859e8 # v2
+      - uses: jdx/mise-action@13abe502c30c1559a5c37dff303831bab82c9402 # v2
       - run: go test ./... || true # no tests right now - remove when first added
   build:
     runs-on: ubuntu-24.04
     needs: test
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
         with:
           path: |
             ~/.cache/go-build
@@ -34,5 +34,5 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - uses: jdx/mise-action@5083fe46898c414b2475087cc79da59e7da859e8 # v2
+      - uses: jdx/mise-action@13abe502c30c1559a5c37dff303831bab82c9402 # v2
       - run: go build -o listenbrainz-rpc main.go
