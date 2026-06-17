@@ -8,45 +8,38 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
-	"github.com/spf13/cobra"
 )
 
 type model struct {
 	progress     progress.Model
 	spinner      spinner.Model
 	listenBrainz ListenBrainz
-	currentSong  TrackMetadata
+	currentListen Listen
 	discord      DiscordActivity
 	cover        CoverArtRetriever
 }
 
 type (
-	tickMsg      time.Time
-	trackChange  TrackMetadata
-	trackPlaying TrackMetadata
+	trackChange  Listen
+	trackPlaying Listen
 	trackStop    struct{}
 )
 
-func (m model) getNowPlaying() *TrackMetadata {
-	currentSong := m.listenBrainz.GetNowPlaying()
-
-	if currentSong == nil {
-		return nil
-	}
-	return &currentSong.TrackMetadata
+func (m model) getNowPlaying() *Listen {
+	return m.listenBrainz.GetNowPlaying()
 }
 
 func getCurrentSong(m model) tea.Msg {
-	currentSong := m.getNowPlaying()
-	if currentSong == nil {
+	currentListen := m.getNowPlaying()
+	if currentListen == nil {
 		return trackStop{}
 	}
-	newSongRetriever := NewReleaseInfoRetriever(*currentSong)
+	newSongRetriever := NewReleaseInfoRetriever(currentListen.TrackMetadata)
 
-	if !newSongRetriever.TrackMatches(m.currentSong) {
-		return trackChange(*currentSong)
+	if !newSongRetriever.TrackMatches(m.currentListen.TrackMetadata) {
+		return trackChange(*currentListen)
 	}
-	return trackPlaying(*currentSong)
+	return trackPlaying(*currentListen)
 }
 
 func tickCmd(m model) tea.Cmd {
@@ -69,21 +62,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case trackChange:
 		log.Debug("TRACK CHANGE")
-		currentSong := TrackMetadata(msg)
+		currentListen := Listen(msg)
 		m.discord.Login()
-		m.currentSong = currentSong
+		m.currentListen = currentListen
 		log.Infof("Track changed to %s", m.getCurrentPlayingString())
 		activity := m.getDiscordActivity()
 		log.Debugf("activity: %v", activity)
 		err := m.discord.AddActivity(activity)
-		cobra.CheckErr(err)
+		if err != nil {
+			log.Errorf("Unable to add Discord activity: %v", err)
+		}
 		return m, tea.Batch(tickCmd(m), m.spinner.Tick)
 	case trackPlaying:
 		log.Debug("TRACK PLAYING")
 		return m, tea.Batch(tickCmd(m), m.spinner.Tick)
 	case trackStop:
 		log.Debug("TRACK STOPPED")
-		m.currentSong = TrackMetadata{}
+		m.currentListen = Listen{}
 		m.spinner = newSpinner()
 		m.discord.Logout()
 		return m, tickCmd(m)
@@ -97,13 +92,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) getDiscordActivity() *ScrobbleActivity {
-	releaseInfo := NewReleaseInfoRetriever(m.currentSong)
+	releaseInfo := NewReleaseInfoRetriever(m.currentListen.TrackMetadata)
 	releaseId := releaseInfo.GetReleaseId()
 	albumArt := m.cover.GetFront(releaseId)
 
-	albumName := m.currentSong.ReleaseName
-	artistName := m.currentSong.ArtistName
-	trackName := m.currentSong.TrackName
+	albumName := m.currentListen.TrackMetadata.ReleaseName
+	artistName := m.currentListen.TrackMetadata.ArtistName
+	trackName := m.currentListen.TrackMetadata.TrackName
 	duration := releaseInfo.GetDuration()
 
 	activity := &ScrobbleActivity{
@@ -118,16 +113,14 @@ func (m model) getDiscordActivity() *ScrobbleActivity {
 }
 
 func (m model) getCurrentPlayingString() string {
-	currentSong := m.currentSong
-	trackName := currentSong.TrackName
-	artistName := currentSong.ArtistName
-	albumName := currentSong.ReleaseName
+	trackName := m.currentListen.TrackMetadata.TrackName
+	artistName := m.currentListen.TrackMetadata.ArtistName
+	albumName := m.currentListen.TrackMetadata.ReleaseName
 	return fmt.Sprintf("%s :: %s :: %s", trackName, artistName, albumName)
 }
 
 func (m model) View() string {
-	currentSong := m.currentSong
-	if currentSong.TrackName == "" {
+	if m.currentListen.TrackMetadata.TrackName == "" {
 		return fmt.Sprintf("%s No songs are playing", m.spinner.View())
 	}
 	return fmt.Sprintf("%s Playing %s", m.spinner.View(), m.getCurrentPlayingString())
@@ -137,12 +130,12 @@ func newSpinner() spinner.Model {
 	return spinner.New(spinner.WithSpinner(spinner.Jump))
 }
 
-func NewModel() tea.Model {
+func NewModel(cfg Config) tea.Model {
 	return &model{
 		progress:     progress.New(progress.WithoutPercentage(), progress.WithDefaultGradient()),
 		spinner:      newSpinner(),
-		listenBrainz: NewListenBrainz(),
-		discord:      NewDiscordActivity(),
+		listenBrainz: NewListenBrainz(cfg),
+		discord:      NewDiscordActivity(cfg),
 		cover:        NewCoverArtRetriever(),
 	}
 }

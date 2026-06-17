@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/charmbracelet/log"
-	"github.com/spf13/viper"
 )
 
-const API_VERSION = 1
-const API_BASE = "https://api.listenbrainz.org"
+const (
+	API_VERSION = 1
+	API_BASE    = "https://api.listenbrainz.org"
+)
 
 type ListenResponse struct {
 	Payload ListenPayload `json:"payload"`
@@ -69,7 +70,9 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 	}
 
 	body := res.Body
-	defer body.Close()
+	defer func() {
+		_ = body.Close()
+	}()
 
 	var listenResponse ListenResponse
 
@@ -82,18 +85,17 @@ func (l listenBrainz) GetNowPlaying() *Listen {
 	payload := listenResponse.Payload
 
 	return l.findCurrentListen(&payload)
-
 }
 
 func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
 	log.Debugf("incoming listen: %v", payload)
 	var currentListen *Listen
-	if payload.PlayingNow == false || payload.Count == 0 {
+	if !payload.PlayingNow || payload.Count == 0 {
 		log.Debugf("No song playing")
 		return nil
 	}
 	for _, listen := range payload.Listens {
-		if listen.PlayingNow == true {
+		if listen.PlayingNow {
 			currentListen = &listen
 			break
 		}
@@ -102,9 +104,8 @@ func (l listenBrainz) findCurrentListen(payload *ListenPayload) *Listen {
 	return currentListen
 }
 
-func NewListenBrainz() ListenBrainz {
-	username := viper.GetString("user")
+func NewListenBrainz(cfg Config) ListenBrainz {
 	return &listenBrainz{
-		username: username,
+		username: cfg.User,
 	}
 }

@@ -1,111 +1,90 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/ikanexus/listenbrainz-rpc/internal"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	altsrc "github.com/urfave/cli-altsrc/v3"
+	"github.com/urfave/cli-altsrc/v3/yaml"
+	"github.com/urfave/cli/v3"
 )
 
-var cfgFile string
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "listenbrainz-rpc",
-	Short: "A CLI tool to show what you're watching in ListenBrainz as Discord Activity",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	RunE: func(cmd *cobra.Command, args []string) error {
-		m := internal.NewModel()
-		if _, err := tea.NewProgram(m).Run(); err != nil {
-			return err
-		}
-		return nil
-		// scrobbler := internal.NewScrobbler()
-		// return scrobbler.Scrobble()
-	},
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	var configFile string
+
+	cmd := &cli.Command{
+		Name:  "listenbrainz-rpc",
+		Usage: "A CLI tool to show what you're watching in ListenBrainz as Discord Activity",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "config",
+				Usage:       "config file",
+				Value:       filepath.Join(xdg.ConfigHome, "listenbrainz-rpc.yaml"),
+				Sources:     cli.EnvVars("LISTENBRAINZ_CONFIG"),
+				Destination: &configFile,
+			},
+			&cli.StringFlag{
+				Name:    "app-id",
+				Aliases: []string{"a"},
+				Usage:   "Discord App ID",
+				Value:   "1232457767726485545",
+				Sources: cli.NewValueSourceChain(
+					cli.EnvVar("LISTENBRAINZ_APP_ID"),
+					yaml.YAML("app-id", altsrc.NewStringPtrSourcer(&configFile)),
+				),
+			},
+			&cli.StringFlag{
+				Name:    "user",
+				Aliases: []string{"u"},
+				Usage:   "Listenbrainz Username",
+				Sources: cli.NewValueSourceChain(
+					cli.EnvVar("LISTENBRAINZ_USER"),
+					yaml.YAML("user", altsrc.NewStringPtrSourcer(&configFile)),
+				),
+			},
+			&cli.BoolFlag{
+				Name:    "verbose",
+				Aliases: []string{"v"},
+				Usage:   "Show verbose logging",
+				Sources: cli.NewValueSourceChain(
+					cli.EnvVar("LISTENBRAINZ_VERBOSE"),
+					yaml.YAML("verbose", altsrc.NewStringPtrSourcer(&configFile)),
+				),
+				Action: func(ctx context.Context, cmd *cli.Command, v bool) error {
+					if v {
+						log.SetLevel(log.DebugLevel)
+					}
+					return nil
+				},
+			},
+		},
+		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+			_, _ = tea.LogToFileWith("listenbrainz.log", "", log.Default())
+			return ctx, nil
+		},
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			cfg := internal.Config{
+				AppID:   cmd.String("app-id"),
+				User:    cmd.String("user"),
+				Verbose: cmd.Bool("verbose"),
+			}
+
+			m := internal.NewModel(cfg)
+			if _, err := tea.NewProgram(m).Run(); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
-	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	configDefault := fmt.Sprintf("%s/listenbrainz-rpc.yaml", getXdgHome())
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", configDefault, "config file")
-
-	rootCmd.Flags().StringP("app-id", "a", "1232457767726485545", "Discord App ID")
-	viper.BindPFlag("app-id", rootCmd.Flags().Lookup("app-id"))
-
-	rootCmd.Flags().StringP("user", "u", "", "Listenbrainz Username")
-	viper.BindPFlag("user", rootCmd.Flags().Lookup("user"))
-
-	rootCmd.Flags().BoolP("verbose", "v", false, "Show verbose logging")
-	viper.BindPFlag("verbose", rootCmd.Flags().Lookup("verbose"))
-}
-
-func getXdgHome() string {
-	// Find home directory.
-	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
-
-	xdgHome := os.Getenv("XDG_CONFIG_HOME")
-	if xdgHome == "" {
-		xdgHome = filepath.Join(home, ".config")
-	}
-	return xdgHome
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	// Configure logger to output to file as we can't output to StdOut
-	level := log.InfoLevel
-	if viper.GetBool("verbose") {
-		level = log.DebugLevel
-	}
-	log.SetLevel(level)
-	// log.SetFormatter(log.JSONFormatter)
-	logFile := viper.GetString("logFile")
-	if logFile == "" {
-		logFile = "listenbrainz.log"
-	}
-	tea.LogToFileWith(logFile, "", log.Default())
-
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		xdgHome := getXdgHome()
-
-		viper.AddConfigPath(xdgHome)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("listenbrainz-rpc")
-	}
-
-	viper.SetEnvPrefix("listenbrainz")
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 }

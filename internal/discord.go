@@ -6,7 +6,6 @@ import (
 
 	"github.com/axrona/go-discordrpc/client"
 	"github.com/charmbracelet/log"
-	"github.com/spf13/viper"
 )
 
 type ScrobbleActivity struct {
@@ -30,12 +29,10 @@ type discordActivity struct {
 	listenbrainzUser string
 }
 
-func NewDiscordActivity() DiscordActivity {
-	appId := viper.GetString("app-id")
-	user := viper.GetString("user")
+func NewDiscordActivity(cfg Config) DiscordActivity {
 	return &discordActivity{
-		appId:            appId,
-		listenbrainzUser: user,
+		appId:            cfg.AppID,
+		listenbrainzUser: cfg.User,
 	}
 }
 
