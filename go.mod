@@ -2,7 +2,7 @@ module github.com/ikanexus/listenbrainz-rpc
 
 go 1.24.0
 
-toolchain go1.24.13
+toolchain go1.26.4
 
 require (
 	github.com/axrona/go-discordrpc v1.1.0-1
