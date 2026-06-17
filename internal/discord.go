@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/axrona/go-discordrpc/client"
 	"github.com/charmbracelet/log"
-	"github.com/hugolgst/rich-go/client"
 	"github.com/spf13/viper"
 )
 
@@ -15,6 +15,7 @@ type ScrobbleActivity struct {
 	Track     string
 	Cover     string
 	ReleaseId string
+	Duration  time.Duration
 }
 
 type DiscordActivity interface {
@@ -24,7 +25,7 @@ type DiscordActivity interface {
 }
 
 type discordActivity struct {
-	active           bool
+	client           *client.Client
 	appId            string
 	listenbrainzUser string
 }
@@ -40,22 +41,22 @@ func NewDiscordActivity() DiscordActivity {
 
 func (d *discordActivity) Login() {
 	log.Debugf("Logging in with AppID: %s", d.appId)
-	if d.active {
+	if d.client != nil {
 		log.Debug("Already logged in, skipping")
 		return
 	}
-	err := client.Login(d.appId)
-	if err != nil {
+	d.client = client.NewClient(d.appId)
+	if err := d.client.Login(); err != nil {
 		log.Fatalf("Unable to login to Discord IPC => %v", err)
+		d.client = nil
 	}
-	d.active = true
 }
 
 func (d *discordActivity) Logout() {
 	log.Debugf("Logging out from IPC")
-	if d.active {
-		d.active = false
-		client.Logout()
+	if d.client != nil {
+		d.client.Logout()
+		d.client = nil
 	} else {
 		log.Debug("Already logged out, skipping")
 	}
@@ -72,8 +73,10 @@ func (d discordActivity) getButtons(musicActivity *ScrobbleActivity) []*client.B
 
 func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
 	startTime := time.Now()
-	timestamps := &client.Timestamps{Start: &startTime}
+	endTime := startTime.Add(musicActivity.Duration)
+	timestamps := &client.Timestamps{Start: &startTime, End: &endTime}
 	activity := client.Activity{
+		Type:       2, // Music Activity
 		State:      musicActivity.Artist,
 		Details:    musicActivity.Track,
 		LargeImage: musicActivity.Cover,
@@ -85,5 +88,5 @@ func (d discordActivity) AddActivity(musicActivity *ScrobbleActivity) error {
 		Timestamps: timestamps,
 		Buttons:    d.getButtons(musicActivity),
 	}
-	return client.SetActivity(activity)
+	return d.client.SetActivity(activity)
 }

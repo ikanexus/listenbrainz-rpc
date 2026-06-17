@@ -20,10 +20,12 @@ type model struct {
 	cover        CoverArtRetriever
 }
 
-type tickMsg time.Time
-type trackChange TrackMetadata
-type trackPlaying TrackMetadata
-type trackStop struct{}
+type (
+	tickMsg      time.Time
+	trackChange  TrackMetadata
+	trackPlaying TrackMetadata
+	trackStop    struct{}
+)
 
 func (m model) getNowPlaying() *TrackMetadata {
 	currentSong := m.listenBrainz.GetNowPlaying()
@@ -102,6 +104,7 @@ func (m model) getDiscordActivity() *ScrobbleActivity {
 	albumName := m.currentSong.ReleaseName
 	artistName := m.currentSong.ArtistName
 	trackName := m.currentSong.TrackName
+	duration := releaseInfo.GetDuration()
 
 	activity := &ScrobbleActivity{
 		Album:     albumName,
@@ -109,6 +112,7 @@ func (m model) getDiscordActivity() *ScrobbleActivity {
 		Track:     trackName,
 		Cover:     albumArt,
 		ReleaseId: releaseId,
+		Duration:  duration,
 	}
 	return activity
 }
