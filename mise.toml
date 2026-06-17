@@ -1,4 +1,5 @@
 [tools]
+"aqua:oligot/go-mod-upgrade" = "latest"
 go = "latest"
 goreleaser = "latest"
 just = "latest"

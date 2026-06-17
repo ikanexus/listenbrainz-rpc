@@ -18,3 +18,6 @@ release-snapshot:
 
 release:
     goreleaser release --clean
+
+upgrade-deps *args:
+  go-mod-upgrade {{args}}
