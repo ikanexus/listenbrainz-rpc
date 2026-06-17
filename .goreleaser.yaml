@@ -5,7 +5,6 @@ version: 2
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
 
 builds:
@@ -17,7 +16,7 @@ builds:
       - darwin
 
 archives:
-  - format: binary
+  - formats: ["binary"]
 
 changelog:
   sort: asc
@@ -25,10 +24,3 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-
-release:
-  footer: >-
-
-    ---
-
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

@@ -35,4 +35,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: jdx/mise-action@v4
-      - run: just build
+      - run: just release-snapshot
